@@ -1,564 +1,1084 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>我的小手机 · 可返回</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>我的小手机</title>
+<style>
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        html,
-        body {
-            margin: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-                "PingFang SC", "Helvetica Neue", Arial, sans-serif;
-        }
+html, body {
+    margin: 0; width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                 "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+}
+body { background: #111; }
 
-        body {
-            background: #111;
-        }
+.phone {
+    width: 100vw; height: 100vh;
+    position: relative; overflow: hidden;
+    background: linear-gradient(160deg, #dfe9ff, #f5e6ff 55%, #dff7ff);
+}
 
-        .phone {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(160deg, #dfe9ff, #f5e6ff 55%, #dff7ff);
-        }
+.status-bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 54px;
+    padding: 10px 24px 0;
+    display: flex; justify-content: space-between; align-items: center;
+    z-index: 60; font-size: 15px; font-weight: 600;
+}
+.status-right { display: flex; gap: 7px; align-items: center; }
 
-        /* 顶部状态栏 */
-        .status-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 54px;
-            padding: 10px 24px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 20;
-            font-size: 15px;
-            font-weight: 600;
-        }
+.dynamic-island {
+    position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+    width: 126px; height: 34px; background: #000; border-radius: 22px;
+    z-index: 65;
+}
 
-        .status-right {
-            display: flex;
-            gap: 7px;
-            align-items: center;
-        }
+.lock-screen {
+    position: absolute; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 100px;
+    transition: transform .45s ease, opacity .45s ease;
+    cursor: pointer;
+}
+.lock-screen.hidden {
+    transform: translateY(-100%); opacity: 0; pointer-events: none;
+}
+.lock-time { font-size: 76px; line-height: 1; font-weight: 300; letter-spacing: -4px; }
+.lock-date { margin-top: 12px; font-size: 20px; font-weight: 500; }
+.lock-weather {
+    margin-top: 20px; padding: 9px 17px; border-radius: 22px;
+    background: rgba(255,255,255,.38); backdrop-filter: blur(15px);
+    font-size: 15px;
+}
+.unlock-hint { position: absolute; bottom: 75px; font-size: 14px; opacity: .65; }
 
-        /* 灵动岛 */
-        .dynamic-island {
-            position: absolute;
-            top: 11px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 126px;
-            height: 34px;
-            background: #000;
-            border-radius: 22px;
-            z-index: 30;
-        }
+.home-screen {
+    position: absolute; inset: 0; padding: 75px 20px 30px;
+    display: flex; flex-direction: column;
+    opacity: 0; pointer-events: none;
+    transition: opacity .4s ease;
+}
+.home-screen.active { opacity: 1; pointer-events: auto; }
 
-        /* 锁屏 */
-        .lock-screen {
-            position: absolute;
-            inset: 0;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 100px;
-            transition: transform .45s ease, opacity .45s ease;
-            cursor: pointer;
-        }
+.widget {
+    margin-top: 8px; padding: 18px; border-radius: 25px;
+    background: rgba(255,255,255,.35); backdrop-filter: blur(20px);
+    box-shadow: 0 10px 35px rgba(50,50,80,.12);
+}
+.widget-title { font-size: 14px; opacity: .7; }
+.widget-time { margin-top: 5px; font-size: 32px; font-weight: 600; }
+.widget-date { margin-top: 3px; font-size: 14px; }
 
-        .lock-screen.hidden {
-            transform: translateY(-100%);
-            opacity: 0;
-            pointer-events: none;
-        }
+.app-grid {
+    margin-top: 24px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 22px 14px;
+}
+.app { text-align: center; font-size: 12px; cursor: pointer; }
+.app-icon {
+    width: 58px; height: 58px; margin: auto; border-radius: 15px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 28px; background: rgba(255,255,255,.72);
+    box-shadow: 0 7px 18px rgba(0,0,0,.12);
+    transition: transform 0.1s ease;
+}
+.app-name { margin-top: 6px; }
 
-        .lock-time {
-            font-size: 76px;
-            line-height: 1;
-            font-weight: 300;
-            letter-spacing: -4px;
-        }
+.dock {
+    margin-top: auto; padding: 12px 10px; border-radius: 28px;
+    background: rgba(255,255,255,.35); backdrop-filter: blur(20px);
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+}
+.dock .app-icon { width: 54px; height: 54px; }
 
-        .lock-date {
-            margin-top: 12px;
-            font-size: 20px;
-            font-weight: 500;
-        }
+.home-bar {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 130px; height: 5px; background: rgba(0,0,0,0.4);
+    border-radius: 3px; z-index: 50; cursor: pointer;
+}
 
-        .lock-weather {
-            margin-top: 20px;
-            padding: 9px 17px;
-            border-radius: 22px;
-            background: rgba(255, 255, 255, .38);
-            backdrop-filter: blur(15px);
-            font-size: 15px;
-        }
+.app-window {
+    position: absolute; inset: 0;
+    background: #f2f2f7;
+    z-index: 40;
+    display: flex; flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.35s ease;
+    padding-top: 54px;
+    padding-bottom: 20px;
+}
+.app-window.active { transform: translateY(0); }
 
-        .unlock-hint {
-            position: absolute;
-            bottom: 75px;
-            font-size: 14px;
-            opacity: .65;
-        }
+.app-topbar {
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    padding: 4px 8px;
+    min-height: 44px;
+}
+.app-back-btn {
+    background: none; border: none;
+    font-size: 30px; line-height: 1;
+    color: #007aff; cursor: pointer;
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    padding: 0;
+    font-family: inherit;
+}
+.app-back-btn:active { background: rgba(0,0,0,0.06); }
+.app-back-btn.hidden { visibility: hidden; }
+.app-title {
+    font-size: 17px; font-weight: 600; text-align: center; color: #000;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
-        /* 桌面 */
-        .home-screen {
-            position: absolute;
-            inset: 0;
-            padding: 75px 20px 30px;
-            display: flex;
-            flex-direction: column;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .4s ease;
-        }
+.app-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 16px 24px;
+    -webkit-overflow-scrolling: touch;
+}
 
-        .home-screen.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
+/* 聊天模式 */
+.app-body.chat-mode {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+}
+.chat-bubble {
+    max-width: 78%;
+    padding: 9px 13px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.45;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+.chat-bubble.user {
+    align-self: flex-end;
+    background: #007aff;
+    color: #fff;
+    border-bottom-right-radius: 5px;
+}
+.chat-bubble.assistant {
+    align-self: flex-start;
+    background: #e9e9eb;
+    color: #000;
+    border-bottom-left-radius: 5px;
+}
+.chat-bubble.error {
+    background: #ffe5e5;
+    color: #c00;
+    align-self: flex-start;
+}
+.chat-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8e8e93;
+    font-size: 14px;
+    text-align: center;
+    padding: 40px;
+    line-height: 1.7;
+}
+.chat-input-bar {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #f7f7f9;
+    border-top: 1px solid #e5e5ea;
+    align-items: center;
+    flex-shrink: 0;
+}
+.chat-input-bar input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 20px;
+    border: 1px solid #e5e5ea;
+    font-size: 15px;
+    outline: none;
+    background: #fff;
+    font-family: inherit;
+    min-width: 0;
+}
+.chat-input-bar input:focus { border-color: #007aff; }
+.chat-send-btn {
+    padding: 10px 16px;
+    border-radius: 20px;
+    border: none;
+    background: #007aff;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    flex-shrink: 0;
+}
+.chat-send-btn:disabled { opacity: .45; cursor: not-allowed; }
+.chat-send-btn:active:not(:disabled) { opacity: .8; }
 
-        /* 小组件 */
-        .widget {
-            margin-top: 8px;
-            padding: 18px;
-            border-radius: 25px;
-            background: rgba(255, 255, 255, .35);
-            backdrop-filter: blur(20px);
-            box-shadow: 0 10px 35px rgba(50, 50, 80, .12);
-        }
+/* 设置分组 */
+.settings-group {
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+.settings-row {
+    display: flex; align-items: center;
+    padding: 11px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    min-height: 48px;
+    gap: 12px;
+    transition: background .15s;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row:active { background: #f5f5f7; }
+.settings-row-icon {
+    width: 28px; height: 28px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0; color: #fff;
+}
+.settings-row-label { flex: 1; font-size: 15px; color: #000; }
+.settings-row-value {
+    font-size: 14px; color: #8e8e93;
+    max-width: 150px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+}
+.settings-row-arrow { color: #c7c7cc; font-size: 18px; margin-left: 2px; }
 
-        .widget-title {
-            font-size: 14px;
-            opacity: .7;
-        }
+.settings-form-group {
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+.settings-form-row {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.settings-form-row:last-child { border-bottom: none; }
+.settings-form-row-label {
+    font-size: 13px; color: #666; margin-bottom: 6px;
+}
+.settings-input,
+.settings-select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    border: 1px solid #e5e5ea;
+    border-radius: 9px;
+    background: #f7f7f9;
+    color: #000;
+    outline: none;
+    font-family: inherit;
+}
+.settings-input:focus,
+.settings-select:focus {
+    border-color: #007aff; background: #fff;
+}
+.settings-select {
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3e%3cpath fill='%238e8e93' d='M6 8L2 4h8z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
 
-        .widget-time {
-            margin-top: 5px;
-            font-size: 32px;
-            font-weight: 600;
-        }
+.settings-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #007aff;
+    color: #fff;
+    font-family: inherit;
+    transition: opacity .15s;
+}
+.settings-btn:active { opacity: .75; }
+.settings-btn:disabled { opacity: .5; cursor: not-allowed; }
+.settings-btn.secondary { background: #e5e5ea; color: #007aff; }
+.settings-btn.danger { background: #ff3b30; color: #fff; }
+.btn-row { display: flex; gap: 10px; }
+.btn-row .settings-btn { flex: 1; }
 
-        .widget-date {
-            margin-top: 3px;
-            font-size: 14px;
-        }
+.settings-note {
+    font-size: 12px;
+    color: #8e8e93;
+    padding: 10px 4px 0;
+    line-height: 1.6;
+}
 
-        /* App 网格 */
-        .app-grid {
-            margin-top: 24px;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 22px 14px;
-        }
+.account-card {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 30px 16px;
+    background: #fff; border-radius: 12px; margin-bottom: 14px;
+}
+.account-avatar {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, #007aff, #5856d6);
+    color: #fff; font-size: 34px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+}
+.account-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.account-status { font-size: 13px; color: #34c759; }
 
-        .app {
-            text-align: center;
-            font-size: 12px;
-            cursor: pointer;
-        }
+.storage-card {
+    background: #fff; border-radius: 12px; margin-bottom: 14px;
+    padding: 18px;
+    display: flex; align-items: center; justify-content: space-between;
+}
+.storage-label { font-size: 14px; color: #666; }
+.storage-value { font-size: 18px; font-weight: 600; color: #000; }
 
-        .app-icon {
-            width: 58px;
-            height: 58px;
-            margin: auto;
-            border-radius: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 28px;
-            background: rgba(255, 255, 255, .72);
-            box-shadow: 0 7px 18px rgba(0, 0, 0, .12);
-            transition: transform 0.1s ease;
-        }
+@media (min-width: 600px) {
+    .phone {
+        width: 393px; height: 852px;
+        margin: auto; top: 50%; transform: translateY(-50%);
+        border-radius: 45px;
+        box-shadow: 0 30px 80px rgba(0,0,0,.4);
+    }
+    body { display: flex; align-items: center; justify-content: center; background: #222; }
+}
 
-        .app-name {
-            margin-top: 6px;
-        }
-
-        /* 底部 Dock */
-        .dock {
-            margin-top: auto;
-            padding: 12px 10px;
-            border-radius: 28px;
-            background: rgba(255, 255, 255, .35);
-            backdrop-filter: blur(20px);
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-        }
-
-        .dock .app-icon {
-            width: 54px;
-            height: 54px;
-        }
-
-        /* 底部 Home 横条 */
-        .home-bar {
-            position: absolute;
-            bottom: 8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 130px;
-            height: 5px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 3px;
-            z-index: 50;
-            cursor: pointer;
-        }
-
-        /* 应用应用界面/弹窗 */
-        .app-window {
-            position: absolute;
-            inset: 0;
-            background: #ffffff;
-            z-index: 40;
-            padding: 80px 20px 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transform: translateY(100%);
-            transition: transform 0.35s ease;
-            /* 确保弹窗本身可点击，但点击内部不冒泡到home-bar */
-        }
-
-        .app-window.active {
-            transform: translateY(0);
-        }
-
-        .app-window-title {
-            font-size: 22px;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-
-        .app-window-content {
-            font-size: 16px;
-            color: #666;
-            text-align: center;
-        }
-
-        /* 小手机比例 */
-        @media (min-width: 600px) {
-            .phone {
-                width: 393px;
-                height: 852px;
-                margin: auto;
-                top: 50%;
-                transform: translateY(-50%);
-                border-radius: 45px;
-                box-shadow: 0 30px 80px rgba(0, 0, 0, .4);
-            }
-
-            body {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: #222;
-            }
-        }
-
-        /* 点击反馈 */
-        .app-icon:active {
-            transform: scale(.92);
-        }
-
-        /* 防止home-bar被app窗口遮挡 */
-        .app-window {
-            pointer-events: auto;
-        }
-    </style>
+.app-icon:active { transform: scale(.92); }
+</style>
 </head>
 
 <body>
 
-    <div class="phone">
+<div class="phone">
 
-        <div class="status-bar">
-            <span id="statusTime">21:00</span>
-
-            <div class="status-right">
-                <span>▮▮▮</span>
-                <span>Wi-Fi</span>
-                <span>🔋</span>
-            </div>
+    <div class="status-bar">
+        <span id="statusTime">21:00</span>
+        <div class="status-right">
+            <span>▮▮▮</span><span>Wi-Fi</span><span>🔋</span>
         </div>
-
-        <div class="dynamic-island"></div>
-
-        <!-- 锁屏 -->
-        <section class="lock-screen" id="lockScreen">
-
-            <div class="lock-time" id="lockTime">21:00</div>
-
-            <div class="lock-date" id="lockDate">
-                2026年9月29日 星期二
-            </div>
-
-            <div class="lock-weather">
-                ☁️ 天气待设置
-            </div>
-
-            <div class="unlock-hint">
-                点击屏幕进入桌面
-            </div>
-
-        </section>
-
-        <!-- 桌面 -->
-        <main class="home-screen" id="homeScreen">
-
-            <div class="widget">
-
-                <div class="widget-title">
-                    我的手机
-                </div>
-
-                <div class="widget-time" id="homeTime">
-                    21:00
-                </div>
-
-                <div class="widget-date" id="homeDate">
-                    2026年9月29日
-                </div>
-
-            </div>
-
-            <div class="app-grid">
-
-                <div class="app" data-name="AI聊天">
-                    <div class="app-icon">💬</div>
-                    <div class="app-name">AI聊天</div>
-                </div>
-
-                <div class="app" data-name="角色">
-                    <div class="app-icon">👤</div>
-                    <div class="app-name">角色</div>
-                </div>
-
-                <div class="app" data-name="世界书">
-                    <div class="app-icon">📖</div>
-                    <div class="app-name">世界书</div>
-                </div>
-
-                <div class="app" data-name="备忘录">
-                    <div class="app-icon">📝</div>
-                    <div class="app-name">备忘录</div>
-                </div>
-
-                <div class="app" data-name="游戏">
-                    <div class="app-icon">🎮</div>
-                    <div class="app-name">游戏</div>
-                </div>
-
-                <div class="app" data-name="浏览器">
-                    <div class="app-icon">🌐</div>
-                    <div class="app-name">浏览器</div>
-                </div>
-
-                <div class="app" data-name="设置">
-                    <div class="app-icon">⚙️</div>
-                    <div class="app-name">设置</div>
-                </div>
-
-                <div class="app" data-name="添加">
-                    <div class="app-icon">＋</div>
-                    <div class="app-name">添加</div>
-                </div>
-
-            </div>
-
-            <div class="dock">
-
-                <div class="app" data-name="电话">
-                    <div class="app-icon">📞</div>
-                </div>
-
-                <div class="app" data-name="信息">
-                    <div class="app-icon">💬</div>
-                </div>
-
-                <div class="app" data-name="相机">
-                    <div class="app-icon">📷</div>
-                </div>
-
-                <div class="app" data-name="设置">
-                    <div class="app-icon">⚙️️</div>
-                </div>
-
-            </div>
-
-        </main>
-
-        <!-- App 详情弹窗界面 -->
-        <div class="app-window" id="appWindow">
-            <div class="app-window-title" id="appWindowTitle">应用标题</div>
-            <div class="app-window-content" id="appWindowContent">正在开发中...</div>
-        </div>
-
-        <!-- 底部黑条（用于返回主屏幕/重新锁屏） -->
-        <div class="home-bar" id="homeBar"></div>
-
     </div>
 
-    <script>
-        // 更新时间显示
-        function updateTime() {
-            const now = new Date();
-            const hours = String(now.getHours()).padStart(2, "0");
-            const minutes = String(now.getMinutes()).padStart(2, "0");
-            const time = hours + ":" + minutes;
+    <div class="dynamic-island"></div>
 
-            document.getElementById("statusTime").textContent = time;
-            document.getElementById("lockTime").textContent = time;
-            document.getElementById("homeTime").textContent = time;
+    <section class="lock-screen" id="lockScreen">
+        <div class="lock-time" id="lockTime">21:00</div>
+        <div class="lock-date" id="lockDate">2026年9月29日 星期二</div>
+        <div class="lock-weather">☁️ 天气待设置</div>
+        <div class="unlock-hint">点击屏幕进入桌面</div>
+    </section>
 
-            const year = now.getFullYear();
-            const month = now.getMonth() + 1;
-            const day = now.getDate();
+    <main class="home-screen" id="homeScreen">
+        <div class="widget">
+            <div class="widget-title">我的手机</div>
+            <div class="widget-time" id="homeTime">21:00</div>
+            <div class="widget-date" id="homeDate">2026年9月29日</div>
+        </div>
 
-            const week = [
-                "星期日",
-                "星期一",
-                "星期二",
-                "星期三",
-                "星期四",
-                "星期五",
-                "星期六"
-            ][now.getDay()];
+        <div class="app-grid">
+            <div class="app" data-name="AI聊天"><div class="app-icon">💬</div><div class="app-name">AI聊天</div></div>
+            <div class="app" data-name="角色"><div class="app-icon">👤</div><div class="app-name">角色</div></div>
+            <div class="app" data-name="世界书"><div class="app-icon">📖</div><div class="app-name">世界书</div></div>
+            <div class="app" data-name="备忘录"><div class="app-icon">📝</div><div class="app-name">备忘录</div></div>
+            <div class="app" data-name="游戏"><div class="app-icon">🎮</div><div class="app-name">游戏</div></div>
+            <div class="app" data-name="浏览器"><div class="app-icon">🌐</div><div class="app-name">浏览器</div></div>
+            <div class="app" data-name="设置"><div class="app-icon">⚙️</div><div class="app-name">设置</div></div>
+            <div class="app" data-name="添加"><div class="app-icon">＋</div><div class="app-name">添加</div></div>
+        </div>
 
-            document.getElementById("lockDate").textContent =
-                `${year}年${month}月${day}日 ${week}`;
+        <div class="dock">
+            <div class="app" data-name="电话"><div class="app-icon">📞</div></div>
+            <div class="app" data-name="信息"><div class="app-icon">💬</div></div>
+            <div class="app" data-name="相机"><div class="app-icon">📷</div></div>
+            <div class="app" data-name="设置"><div class="app-icon">⚙️️</div></div>
+        </div>
+    </main>
 
-            document.getElementById("homeDate").textContent =
-                `${year}年${month}月${day}日`;
+    <div class="app-window" id="appWindow">
+        <div class="app-topbar">
+            <button class="app-back-btn hidden" id="appBackBtn">‹</button>
+            <div class="app-title" id="appTitle"></div>
+            <div></div>
+        </div>
+        <div class="app-body" id="appBody"></div>
+    </div>
+
+    <div class="home-bar" id="homeBar"></div>
+
+</div>
+
+<script>
+/* ============ 时间 ============ */
+function updateTime() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    const time = hh + ":" + mm;
+    document.getElementById("statusTime").textContent = time;
+    document.getElementById("lockTime").textContent = time;
+    document.getElementById("homeTime").textContent = time;
+
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const d = now.getDate();
+    const week = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][now.getDay()];
+    document.getElementById("lockDate").textContent = `${y}年${m}月${d}日 ${week}`;
+    document.getElementById("homeDate").textContent = `${y}年${m}月${d}日`;
+}
+updateTime();
+setInterval(updateTime, 1000);
+
+/* ============ 元素引用 ============ */
+const lockScreen = document.getElementById("lockScreen");
+const homeScreen = document.getElementById("homeScreen");
+const appWindow  = document.getElementById("appWindow");
+const appTitle   = document.getElementById("appTitle");
+const appBody    = document.getElementById("appBody");
+const appBackBtn = document.getElementById("appBackBtn");
+const homeBar    = document.getElementById("homeBar");
+
+/* ============ 设置数据层 ============ */
+const SETTINGS_KEY = "myphone-settings-v1";
+const CHAT_HISTORY_KEY = "myphone-chat-history";
+
+function defaultSettings() {
+    // ⭐ 想硬编码默认值，直接改这里 ⭐
+    return {
+        account: { loggedIn: false, username: "" },
+        chat:   {
+            provider: "openai",
+            baseUrl: "",     // 例：https://你的中转站.com
+            apiKey: "",      // 中转站给你的密钥
+            model: ""        // 例：gpt-4o-mini
+        },
+        image:  { provider: "openai", baseUrl: "", apiKey: "", model: "" },
+        voice:  { provider: "openai", baseUrl: "", apiKey: "", voiceId: "" }
+    };
+}
+
+let settingsData = (() => {
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (raw) return Object.assign(defaultSettings(), JSON.parse(raw));
+    } catch (e) {}
+    return defaultSettings();
+})();
+
+function persistSettings() {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsData)); }
+    catch (e) {}
+}
+
+let chatMessages = (() => {
+    try {
+        const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return [];
+})();
+
+function saveChatHistory() {
+    try { localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatMessages)); }
+    catch (e) {}
+}
+
+/* ============ 工具 ============ */
+function escapeHtml(s) {
+    return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function maskKey(k) {
+    if (!k) return "未配置";
+    if (k.length <= 8) return "••••";
+    return k.slice(0, 4) + "••••" + k.slice(-4);
+}
+function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / 1024 / 1024).toFixed(2) + " MB";
+}
+function getStorageSize() {
+    let total = 0;
+    for (let k in localStorage) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, k)) {
+            total += (localStorage[k].length + k.length) * 2;
         }
+    }
+    return total;
+}
 
-        updateTime();
-        setInterval(updateTime, 1000);
+/* ⭐ 中转站地址归一化：填 https://x.com 或 https://x.com/v1 都行 */
+function normalizeBaseUrl(url) {
+    url = (url || "").trim().replace(/\/+$/, "");
+    if (!url) return "";
+    // 如果结尾不是 /v1、/v2 这种版本号，就自动补 /v1
+    if (!/\/v\d+$/.test(url)) url += "/v1";
+    return url;
+}
 
-        // 获取元素
-        const lockScreen = document.getElementById("lockScreen");
-        const homeScreen = document.getElementById("homeScreen");
-        const appWindow = document.getElementById("appWindow");
-        const homeBar = document.getElementById("homeBar");
+/* ============ 设置页面状态 ============ */
+let settingsPage = "main";
+const PAGE_TITLES = {
+    main: "设置", account: "账号",
+    chat: "聊天 API", image: "生图 API", voice: "语音 API", storage: "数据存储"
+};
 
-        // 点击锁屏解锁
-        lockScreen.addEventListener("click", function () {
-            this.classList.add("hidden");
-            homeScreen.classList.add("active");
+/* ============ 设置主页 ============ */
+function buildMainHTML() {
+    const acc = settingsData.account;
+    const chat = settingsData.chat;
+    const img = settingsData.image;
+    const voice = settingsData.voice;
+
+    const accVal = acc.loggedIn ? escapeHtml(acc.username || "已登录") : "未登录";
+    const chatVal = chat.apiKey ? maskKey(chat.apiKey) : "未配置";
+    const imgVal  = img.apiKey ? maskKey(img.apiKey) : "未配置";
+    const voiceVal = voice.apiKey ? maskKey(voice.apiKey) : "未配置";
+
+    return `
+        <div class="settings-group">
+            <div class="settings-row" data-nav="account">
+                <div class="settings-row-icon" style="background:#007aff">👤</div>
+                <div class="settings-row-label">账号</div>
+                <div class="settings-row-value">${accVal}</div>
+                <div class="settings-row-arrow">›</div>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <div class="settings-row" data-nav="chat">
+                <div class="settings-row-icon" style="background:#34c759">💬</div>
+                <div class="settings-row-label">聊天 API</div>
+                <div class="settings-row-value">${chatVal}</div>
+                <div class="settings-row-arrow">›</div>
+            </div>
+            <div class="settings-row" data-nav="image">
+                <div class="settings-row-icon" style="background:#ff9500">🎨</div>
+                <div class="settings-row-label">生图 API</div>
+                <div class="settings-row-value">${imgVal}</div>
+                <div class="settings-row-arrow">›</div>
+            </div>
+            <div class="settings-row" data-nav="voice">
+                <div class="settings-row-icon" style="background:#af52de">🎤</div>
+                <div class="settings-row-label">语音 API</div>
+                <div class="settings-row-value">${voiceVal}</div>
+                <div class="settings-row-arrow">›</div>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <div class="settings-row" data-nav="storage">
+                <div class="settings-row-icon" style="background:#8e8e93">💾</div>
+                <div class="settings-row-label">数据存储</div>
+                <div class="settings-row-value">${formatBytes(getStorageSize())}</div>
+                <div class="settings-row-arrow">›</div>
+            </div>
+        </div>
+
+        <p class="settings-note">所有设置均保存在本设备浏览器中，不会上传到任何服务器。</p>
+    `;
+}
+
+function buildAccountHTML() {
+    const acc = settingsData.account;
+    if (acc.loggedIn) {
+        return `
+            <div class="account-card">
+                <div class="account-avatar">👤</div>
+                <div class="account-name">${escapeHtml(acc.username)}</div>
+                <div class="account-status">● 已登录</div>
+            </div>
+            <button class="settings-btn danger" data-action="logout">退出登录</button>
+            <p class="settings-note">当前为本地模拟登录，账号信息仅保存在本设备浏览器。</p>
+        `;
+    }
+    return `
+        <div class="settings-form-group">
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">用户名 / 邮箱</div>
+                <input type="text" class="settings-input" id="accUsername" placeholder="请输入用户名" autocomplete="off">
+            </div>
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">密码</div>
+                <input type="password" class="settings-input" id="accPassword" placeholder="请输入密码" autocomplete="off">
+            </div>
+        </div>
+        <button class="settings-btn" data-action="login">登录</button>
+        <p class="settings-note">提示：这是本地模拟登录，任意用户名和密码都可以，仅用于演示。</p>
+    `;
+}
+
+function buildChatHTML() {
+    const c = settingsData.chat;
+    return `
+        <div class="settings-form-group">
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">服务商</div>
+                <select class="settings-select" id="chatProvider">
+                    <option value="openai"    ${c.provider === "openai" ? "selected" : ""}>OpenAI 兼容</option>
+                    <option value="anthropic" ${c.provider === "anthropic" ? "selected" : ""}>Anthropic</option>
+                    <option value="deepseek"  ${c.provider === "deepseek" ? "selected" : ""}>DeepSeek</option>
+                    <option value="custom"    ${c.provider === "custom" ? "selected" : ""}>自定义</option>
+                </select>
+            </div>
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">中转站地址</div>
+                <input type="text" class="settings-input" id="chatBaseUrl"
+                       value="${escapeHtml(c.baseUrl)}"
+                       placeholder="https://你的中转站.com">
+            </div>
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">API Key（中转站密钥）</div>
+                <input type="password" class="settings-input" id="chatApiKey"
+                       value="${escapeHtml(c.apiKey)}"
+                       placeholder="sk-...">
+            </div>
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">默认模型</div>
+                <input type="text" class="settings-input" id="chatModel"
+                       value="${escapeHtml(c.model)}"
+                       placeholder="gpt-4o-mini">
+            </div>
+        </div>
+        <div class="btn-row">
+            <button class="settings-btn secondary" data-action="test-chat">测试连接</button>
+            <button class="settings-btn" data-action="save-chat">保存</button>
+        </div>
+        <p class="settings-note">
+            中转站地址填 <b>https://xxx.com</b> 或 <b>https://xxx.com/v1</b> 都可以，程序会自动补全。<br>
+            「测试连接」会发一条最简请求，验证地址、密钥和 CORS 是否正常。
+        </p>
+    `;
+}
+
+function buildImageHTML() {
+    const c = settingsData.image;
+    return `
+        <div class="settings-form-group">
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">服务商</div>
+                <select class="settings-select" id="imageProvider">
+                    <option value="openai"  ${c.provider === "openai" ? "selected" : ""}>OpenAI 兼容</option>
+                    <option value="stability" ${c.provider === "stability" ? "selected" : ""}>Stability AI</option>
+                    <option value="custom"  ${c.provider === "custom" ? "selected" : ""}>自定义</option>
+                </select>
+            </div>
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">中转站地址</div>
+                <input type="text" class="settings-input" id="imageBaseUrl"
+                       value="${escapeHtml(c.baseUrl)}" placeholder="https://你的中转站.com">
+            </div>
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">API Key</div>
+                <input type="password" class="settings-input" id="imageApiKey"
+                       value="${escapeHtml(c.apiKey)}" placeholder="sk-...">
+            </div>
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">默认模型</div>
+                <input type="text" class="settings-input" id="imageModel"
+                       value="${escapeHtml(c.model)}" placeholder="dall-e-3">
+            </div>
+        </div>
+        <button class="settings-btn" data-action="save-image">保存</button>
+        <p class="settings-note">生图 API 用于需要生成图片的 App 功能。</p>
+    `;
+}
+
+function buildVoiceHTML() {
+    const c = settingsData.voice;
+    return `
+        <div class="settings-form-group">
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">服务商</div>
+                <select class="settings-select" id="voiceProvider">
+                    <option value="openai" ${c.provider === "openai" ? "selected" : ""}>OpenAI TTS</option>
+                    <option value="azure"  ${c.provider === "azure" ? "selected" : ""}>Azure Speech</option>
+                    <option value="custom" ${c.provider === "custom" ? "selected" : ""}>自定义</option>
+                </select>
+            </div>
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">中转站地址</div>
+                <input type="text" class="settings-input" id="voiceBaseUrl"
+                       value="${escapeHtml(c.baseUrl)}" placeholder="https://你的中转站.com">
+            </div>
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">API Key</div>
+                <input type="password" class="settings-input" id="voiceApiKey"
+                       value="${escapeHtml(c.apiKey)}" placeholder="sk-...">
+            </div>
+            <div class="settings-form-row">
+                <div class="settings-form-row-label">默认音色</div>
+                <input type="text" class="settings-input" id="voiceId"
+                       value="${escapeHtml(c.voiceId)}" placeholder="alloy">
+            </div>
+        </div>
+        <button class="settings-btn" data-action="save-voice">保存</button>
+        <p class="settings-note">语音 API 用于语音合成 / 语音对话类功能。</p>
+    `;
+}
+
+function buildStorageHTML() {
+    const total = getStorageSize();
+    const count = Object.keys(localStorage).length;
+    const chatCount = chatMessages.length;
+    return `
+        <div class="storage-card">
+            <div class="storage-label">已用存储空间</div>
+            <div class="storage-value">${formatBytes(total)}</div>
+        </div>
+        <div class="storage-card">
+            <div class="storage-label">存储条目数</div>
+            <div class="storage-value">${count}</div>
+        </div>
+        <div class="storage-card">
+            <div class="storage-label">聊天记录条数</div>
+            <div class="storage-value">${chatCount}</div>
+        </div>
+        <button class="settings-btn danger" data-action="clear-data">清除所有数据</button>
+        <p class="settings-note">清除后，账号、API 配置、聊天记录等所有本地数据都会被删除，且无法恢复。</p>
+    `;
+}
+
+function renderSettings() {
+    appBody.classList.remove("chat-mode");
+    appTitle.textContent = PAGE_TITLES[settingsPage] || "设置";
+
+    if (settingsPage === "main") {
+        appBackBtn.classList.add("hidden");
+        appBody.innerHTML = buildMainHTML();
+    } else {
+        appBackBtn.classList.remove("hidden");
+        if (settingsPage === "account")  appBody.innerHTML = buildAccountHTML();
+        if (settingsPage === "chat")     appBody.innerHTML = buildChatHTML();
+        if (settingsPage === "image")    appBody.innerHTML = buildImageHTML();
+        if (settingsPage === "voice")    appBody.innerHTML = buildVoiceHTML();
+        if (settingsPage === "storage")  appBody.innerHTML = buildStorageHTML();
+    }
+}
+
+/* ============ AI 聊天 ============ */
+function renderAIChat() {
+    appTitle.textContent = "AI聊天";
+    appBackBtn.classList.add("hidden");
+    appBody.classList.add("chat-mode");
+    appBody.innerHTML = `
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-bar">
+            <input id="chatInput" type="text" placeholder="输入消息…" autocomplete="off">
+            <button class="chat-send-btn" id="chatSend">发送</button>
+        </div>
+    `;
+    renderChatMessages();
+
+    const input = document.getElementById("chatInput");
+    const sendBtn = document.getElementById("chatSend");
+
+    sendBtn.addEventListener("click", sendChat);
+    input.addEventListener("keydown", e => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendChat();
+        }
+    });
+}
+
+function renderChatMessages() {
+    const container = document.getElementById("chatMessages");
+    if (!container) return;
+
+    if (chatMessages.length === 0) {
+        container.innerHTML =
+            '<div class="chat-empty">还没有对话<br>请先在 设置 → 聊天 API 配置中转站</div>';
+        return;
+    }
+
+    container.innerHTML = chatMessages.map(m => {
+        let cls = "chat-bubble " + (m.role === "user" ? "user" : "assistant");
+        if (m.error) cls += " error";
+        return `<div class="${cls}">${escapeHtml(m.content)}</div>`;
+    }).join("");
+
+    requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+    });
+}
+
+async function sendChat() {
+    const input = document.getElementById("chatInput");
+    const sendBtn = document.getElementById("chatSend");
+    if (!input || !sendBtn) return;
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    const cfg = settingsData.chat;
+    if (!cfg.baseUrl || !cfg.apiKey) {
+        alert("请先在 设置 → 聊天 API 中配置中转站地址和密钥");
+        return;
+    }
+
+    chatMessages.push({ role: "user", content: text });
+    input.value = "";
+    renderChatMessages();
+    saveChatHistory();
+
+    sendBtn.disabled = true;
+    sendBtn.textContent = "…";
+
+    try {
+        const url = normalizeBaseUrl(cfg.baseUrl) + "/chat/completions";
+        const res = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + cfg.apiKey
+            },
+            body: JSON.stringify({
+                model: cfg.model || "gpt-3.5-turbo",
+                messages: chatMessages.map(m => ({ role: m.role, content: m.content }))
+            })
         });
 
-        // 点击 App 打开界面（事件委托，避免重复绑定）
-        const appGrid = document.querySelector(".app-grid");
-        const dock = document.querySelector(".dock");
-
-        // 通用处理函数：根据点击的.app元素打开窗口
-        function handleAppClick(e) {
-            // 找到实际的 .app 元素（可能点击的是内部icon或name）
-            let target = e.target.closest(".app");
-            if (!target) return;
-
-            e.stopPropagation();
-
-            const appName = target.getAttribute("data-name") || "未命名应用";
-            
-            // 设置窗口标题和内容
-            document.getElementById("appWindowTitle").textContent = appName;
-            document.getElementById("appWindowContent").textContent = `这里是【${appName}】功能界面`;
-            
-            // 显示应用窗口
-            appWindow.classList.add("active");
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`HTTP ${res.status}\n${errText.slice(0, 300)}`);
         }
 
-        // 为桌面网格和dock分别绑定点击事件
-        appGrid.addEventListener("click", handleAppClick);
-        dock.addEventListener("click", handleAppClick);
+        const data = await res.json();
+        const reply = data?.choices?.[0]?.message?.content || "(没有返回内容)";
+        chatMessages.push({ role: "assistant", content: reply });
+        saveChatHistory();
+        renderChatMessages();
+    } catch (err) {
+        chatMessages.push({
+            role: "assistant",
+            content: "❌ 请求失败：" + err.message,
+            error: true
+        });
+        renderChatMessages();
+        saveChatHistory();
+    } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "发送";
+    }
+}
 
-        // 关键修复：点击底部横条（HomeBar）返回桌面 / 重新锁屏
-        // 注意：为了让点击home-bar的事件不被app窗口拦截，我们确保home-bar层级足够高（z-index:50），并且app-window的点击不会冒泡到home-bar
-        // 但也要防止在app窗口内部点击时误触home-bar —— 由于home-bar在app窗口上方且独立，没问题。
+/* ============ 测试连接 ============ */
+async function testChatConnection(btn) {
+    const baseUrl = document.getElementById("chatBaseUrl").value.trim();
+    const apiKey  = document.getElementById("chatApiKey").value.trim();
+    const model   = document.getElementById("chatModel").value.trim() || "gpt-3.5-turbo";
 
-        // 我们需要确保点击home-bar时：
-        // 1. 如果有应用窗口打开，则关闭应用窗口（返回桌面）
-        // 2. 如果已经处于桌面（无应用窗口），则锁屏（隐藏桌面，显示锁屏）
-        // 同时，如果当前是锁屏状态，点击home-bar不应该有任何反应（但锁屏时桌面未激活，home-bar点击可以忽略）
-        
-        // 但还有一种情况：用户可能想从应用窗口直接返回锁屏？但根据需求“不能返回”，以及常规逻辑，应该是先回到桌面，再锁屏。
-        // 我们保留逻辑：应用窗口打开 -> 点击home-bar关闭应用（回到桌面）；桌面上点击home-bar锁屏。
-        // 另外，如果桌面没有激活（即锁屏状态），点击home-bar不做任何事。
+    if (!baseUrl || !apiKey) {
+        alert("请先填写中转站地址和 API Key");
+        return;
+    }
 
-        homeBar.addEventListener("click", function (e) {
-            // 阻止事件冒泡，防止触发其他点击（比如某些父级）
-            e.stopPropagation();
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "测试中…";
 
-            // 情况1：应用窗口打开 → 关闭应用窗口，返回桌面
-            if (appWindow.classList.contains("active")) {
-                appWindow.classList.remove("active");
-                return;
-            }
-
-            // 情况2：应用窗口未打开，但桌面是激活状态 → 锁屏（隐藏桌面，显示锁屏）
-            if (homeScreen.classList.contains("active")) {
-                // 锁定：桌面隐藏，锁屏显示
-                homeScreen.classList.remove("active");
-                lockScreen.classList.remove("hidden");
-                // 确保appWindow是关闭状态（安全）
-                appWindow.classList.remove("active");
-                return;
-            }
-
-            // 其他情况（锁屏状态）不做任何事
+    try {
+        const url = normalizeBaseUrl(baseUrl) + "/chat/completions";
+        const res = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + apiKey
+            },
+            body: JSON.stringify({
+                model: model,
+                messages: [{ role: "user", content: "hi" }],
+                max_tokens: 10
+            })
         });
 
-        // 额外处理：当应用窗口打开时，点击窗口本身不应该关闭（我们不需要关闭，保留）
-        // 但为了防止点击窗口内容冒泡到某些地方，可以阻止，但不必。
-        
-        // 为了更符合直觉，也可以点击应用窗口外部（比如状态栏区域）关闭？但根据需求，我们只使用home-bar作为返回。
+        if (!res.ok) {
+            const t = await res.text();
+            throw new Error(`HTTP ${res.status}\n${t.slice(0, 250)}`);
+        }
 
-        // 修复问题：之前点击app后，不能返回是因为点击home-bar时可能被app窗口遮挡？但我们的home-bar z-index 50，app-window z-index 40，home-bar在上层，所以能点到。
-        // 但是app-window的点击事件如果冒泡到home-bar？不会，因为home-bar不在app-window内部。而且我们阻止了app点击的冒泡，不影响。
-        
-        // 确保当app窗口打开时，点击home-bar能关闭（测试通过）。
+        const data = await res.json();
+        const reply = data?.choices?.[0]?.message?.content || "(空)";
+        alert("✅ 连接成功！\n模型回复：" + reply);
+    } catch (err) {
+        alert(
+            "❌ 连接失败：\n" + err.message +
+            "\n\n常见原因：\n" +
+            "1. 地址或 Key 填错\n" +
+            "2. 模型名不存在\n" +
+            "3. 中转站没开 CORS（浏览器拦截）\n" +
+            "4. 余额不足或未授权"
+        );
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
 
-        // 另外注意：点击app图标时我们调用了 e.stopPropagation()，避免触发其他；同时home-bar点击也stopPropagation，无冲突。
+/* ============ 设置内交互 === ============ */
+appBody.addEventListener("click", function (e ") {
+    const nav = e.target.closest("[设置data-nav]");
+    if (nav) {
+        settings")Page = nav.getAttribute("data-nav");
+        renderSettings();
+        return;
+    {
+ }
 
-        // 补充：如果应用窗口已打开，再次点击其他app图标，应当切换内容而不是叠加窗口。当前逻辑会直接更新内容并保持active，没问题。
-        
-        // 还有一个细节：点击app窗口内部不应该关闭窗口，也不应该触发锁屏，因为我们没有在app窗口上绑定任何关闭事件，所以安全。
+    const actionEl = e.target       .closest("[data-action]");
+    if (!actionEl) return;
+    const action = actionEl.getAttribute("data-action");
 
-        // 最后：初始化状态锁屏可见，桌面隐藏，应用窗口隐藏。
-        // 确保锁屏显示、桌面未激活（初始已满足）
-        // 但为了防止缓存状态，强制设置：
-        lockScreen.classList.remove("hidden");
-        homeScreen.classList.remove("active");
+    if (action === "login") {
+        const u = (document.getElementById("accUsername").value || "").trim();
+        const p = document.getElementById("accPassword").value || "";
+        if (!u) { alert("请输入用户名"); return; }
+        if (!p) { alert("请输入密码"); return; }
+        settingsData.account.loggedIn = true;
+        settingsData.account.username = u;
+        persistSettings();
+        renderSettings();
+        return;
+    }
+
+    if (action === "logout") {
+        if (!confirm("确定退出登录？")) return;
+        settingsData.account.loggedIn = false;
+        settingsData.account.username = "";
+        persistSettings();
+        renderSettings();
+        return;
+    }
+
+    if (action === "save-chat") {
+        settingsData.chat.provider = document.getElementById("chatProvider").value;
+        settingsData.chat.baseUrl  = document.getElementById("chatBaseUrl").value.trim();
+        settingsData.chat.apiKey   = document.getElementById("chatApiKey").value.trim();
+        settingsData.chat.model    = document.getElementById("chatModel").value.trim();
+        persistSettings();
+        alert("聊天 API 已保存");
+        return;
+    }
+
+    if (action === "test-chat") {
+        testChatConnection(actionEl);
+        return;
+    }
+
+    if (action === "save-image") {
+        settingsData.image.provider = document.getElementById("imageProvider").value;
+        settingsData.image.baseUrl  = document.getElementById("imageBaseUrl").value.trim();
+        settingsData.image.apiKey   = document.getElementById("imageApiKey").value.trim();
+        settingsData.image.model    = document.getElementById("imageModel").value.trim();
+        persistSettings();
+        alert("生图 API 已保存");
+        return;
+    }
+
+    if (action === "save-voice") {
+        settingsData.voice.provider = document.getElementById("voiceProvider").value;
+        settingsData.voice.baseUrl  = document.getElementById("voiceBaseUrl").value.trim();
+        settingsData.voice.apiKey   = document.getElementById("voiceApiKey").value.trim();
+        settingsData.voice.voiceId  = document.getElementById("voiceId").value.trim();
+        persistSettings();
+        alert("语音 API 已保存");
+        return;
+    }
+
+    if (action === "clear-data") {
+        if (!confirm("确定清除所有本地数据？此操作不可恢复。")) return;
+        localStorage.removeItem(SETTINGS_KEY);
+        localStorage.removeItem(CHAT_HISTORY_KEY);
+        settingsData = defaultSettings();
+        chatMessages = [];
+        alert("已清除");
+        renderSettings();
+        return;
+    }
+});
+
+/* ============ 打开 App ============ */
+function openApp(name) {
+    appBody.classList.remove("chat-mode");
+
+    if (name settingsPage = "main";
+        renderSettings();
+    } else if (name === "AI聊天") {
+        renderAIChat();
+    } else {
+        settingsPage = "main";
+        appTitle.textContent = name;
+        appBackBtn.classList.add("hidden");
+        appBody.innerHTML = `
+            <div style="text-align:center; padding: 80px 20px; color:#8e8e93;">
+                <div style="font-size:60px; margin-bottom:18px;">🚧</div>
+                <div style="font-size:16px;">【${escapeHtml(name)}】功能正在开发中…</div>
+            </div>
+        `;
+    }
+    appWindow.classList.add("active");
+}
+
+appBackBtn.addEventListener("click", function () {
+    if (settingsPage !== "main") {
+        settingsPage = "main";
+        renderSettings();
+    }
+});
+
+lockScreen.addEventListener("click", function () {
+    this.classList.add("hidden");
+    homeScreen.classList.add("active");
+});
+
+document.querySelectorAll(".app").forEach(app => {
+    app.addEventListener("click", function (e) {
+        e.stopPropagation();
+        const name = this.getAttribute("data-name") || "未命名应用";
+        openApp(name);
+    });
+});
+
+homeBar.addEventListener("click", function (e) {
+    e.stopPropagation();
+    if (appWindow.classList.contains("active")) {
         appWindow.classList.remove("active");
+        settingsPage = "main";
+        appBody.classList.remove("chat-mode");
+        return;
+    }
+    if (homeScreen.classList.contains("active")) {
+        homeScreen.classList.remove("active");
+        lockScreen.classList.remove("hidden");
+        appWindow.classList.remove("active");
+        settingsPage = "main";
+        appBody.classList.remove("chat-mode");
+    }
+});
 
-        // 同时为了让用户知道可以返回，在app窗口内添加一句提示？但不用了。
-
-        // 另外，点击底部横条时，如果当前是锁屏，应该不响应，已处理。
-
-        // 为了更严谨，在锁屏被点击解锁后，确保homeBar可点。
-        // 全部OK。
-
-        // 可选：点击桌面空白处也可以？不需要。
-
-        // 完美。
-    </script>
+lockScreen.classList.remove("hidden");
+homeScreen.classList.remove("active");
+appWindow.classList.remove("active");
+settingsPage = "main";
+</script>
 
 </body>
 </html>
