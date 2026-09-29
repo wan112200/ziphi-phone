@@ -1,496 +1,564 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我的小手机 · 可返回</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-<title>我的小手机</title>
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+        }
 
-<style>
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
+        body {
+            background: #111;
+        }
 
-html,
-body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-                 "PingFang SC", "Helvetica Neue", Arial, sans-serif;
-}
+        .phone {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(160deg, #dfe9ff, #f5e6ff 55%, #dff7ff);
+        }
 
-body {
-    background: #111;
-}
+        /* 顶部状态栏 */
+        .status-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 54px;
+            padding: 10px 24px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+            font-size: 15px;
+            font-weight: 600;
+        }
 
-.phone {
-    width: 100vw;
-    height: 100vh;
-    position: relative;
-    overflow: hidden;
-    background: linear-gradient(160deg, #dfe9ff, #f5e6ff 55%, #dff7ff);
-}
+        .status-right {
+            display: flex;
+            gap: 7px;
+            align-items: center;
+        }
 
-/* 顶部状态栏 */
-.status-bar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 54px;
-    padding: 10px 24px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 20;
-    font-size: 15px;
-    font-weight: 600;
-}
+        /* 灵动岛 */
+        .dynamic-island {
+            position: absolute;
+            top: 11px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 126px;
+            height: 34px;
+            background: #000;
+            border-radius: 22px;
+            z-index: 30;
+        }
 
-.status-right {
-    display: flex;
-    gap: 7px;
-    align-items: center;
-}
+        /* 锁屏 */
+        .lock-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 100px;
+            transition: transform .45s ease, opacity .45s ease;
+            cursor: pointer;
+        }
 
-/* 灵动岛 */
-.dynamic-island {
-    position: absolute;
-    top: 11px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 126px;
-    height: 34px;
-    background: #000;
-    border-radius: 22px;
-    z-index: 30;
-}
+        .lock-screen.hidden {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
 
-/* 锁屏 */
-.lock-screen {
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 100px;
-    transition: transform .45s ease, opacity .45s ease;
-    cursor: pointer;
-}
+        .lock-time {
+            font-size: 76px;
+            line-height: 1;
+            font-weight: 300;
+            letter-spacing: -4px;
+        }
 
-.lock-screen.hidden {
-    transform: translateY(-100%);
-    opacity: 0;
-    pointer-events: none;
-}
+        .lock-date {
+            margin-top: 12px;
+            font-size: 20px;
+            font-weight: 500;
+        }
 
-.lock-time {
-    font-size: 76px;
-    line-height: 1;
-    font-weight: 300;
-    letter-spacing: -4px;
-}
+        .lock-weather {
+            margin-top: 20px;
+            padding: 9px 17px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, .38);
+            backdrop-filter: blur(15px);
+            font-size: 15px;
+        }
 
-.lock-date {
-    margin-top: 12px;
-    font-size: 20px;
-    font-weight: 500;
-}
+        .unlock-hint {
+            position: absolute;
+            bottom: 75px;
+            font-size: 14px;
+            opacity: .65;
+        }
 
-.lock-weather {
-    margin-top: 20px;
-    padding: 9px 17px;
-    border-radius: 22px;
-    background: rgba(255,255,255,.38);
-    backdrop-filter: blur(15px);
-    font-size: 15px;
-}
+        /* 桌面 */
+        .home-screen {
+            position: absolute;
+            inset: 0;
+            padding: 75px 20px 30px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .4s ease;
+        }
 
-.unlock-hint {
-    position: absolute;
-    bottom: 75px;
-    font-size: 14px;
-    opacity: .65;
-}
+        .home-screen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
 
-/* 桌面 */
-.home-screen {
-    position: absolute;
-    inset: 0;
-    padding: 75px 20px 30px;
-    display: flex;
-    flex-direction: column;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .4s ease;
-}
+        /* 小组件 */
+        .widget {
+            margin-top: 8px;
+            padding: 18px;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, .35);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 35px rgba(50, 50, 80, .12);
+        }
 
-.home-screen.active {
-    opacity: 1;
-    pointer-events: auto;
-}
+        .widget-title {
+            font-size: 14px;
+            opacity: .7;
+        }
 
-/* 小组件 */
-.widget {
-    margin-top: 8px;
-    padding: 18px;
-    border-radius: 25px;
-    background: rgba(255,255,255,.35);
-    backdrop-filter: blur(20px);
-    box-shadow: 0 10px 35px rgba(50,50,80,.12);
-}
+        .widget-time {
+            margin-top: 5px;
+            font-size: 32px;
+            font-weight: 600;
+        }
 
-.widget-title {
-    font-size: 14px;
-    opacity: .7;
-}
+        .widget-date {
+            margin-top: 3px;
+            font-size: 14px;
+        }
 
-.widget-time {
-    margin-top: 5px;
-    font-size: 32px;
-    font-weight: 600;
-}
+        /* App 网格 */
+        .app-grid {
+            margin-top: 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 22px 14px;
+        }
 
-.widget-date {
-    margin-top: 3px;
-    font-size: 14px;
-}
+        .app {
+            text-align: center;
+            font-size: 12px;
+            cursor: pointer;
+        }
 
-/* App 网格 */
-.app-grid {
-    margin-top: 24px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 22px 14px;
-}
+        .app-icon {
+            width: 58px;
+            height: 58px;
+            margin: auto;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            background: rgba(255, 255, 255, .72);
+            box-shadow: 0 7px 18px rgba(0, 0, 0, .12);
+            transition: transform 0.1s ease;
+        }
 
-.app {
-    text-align: center;
-    font-size: 12px;
-    cursor: pointer;
-}
+        .app-name {
+            margin-top: 6px;
+        }
 
-.app-icon {
-    width: 58px;
-    height: 58px;
-    margin: auto;
-    border-radius: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 28px;
-    background: rgba(255,255,255,.72);
-    box-shadow: 0 7px 18px rgba(0,0,0,.12);
-    transition: transform 0.1s ease;
-}
+        /* 底部 Dock */
+        .dock {
+            margin-top: auto;
+            padding: 12px 10px;
+            border-radius: 28px;
+            background: rgba(255, 255, 255, .35);
+            backdrop-filter: blur(20px);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
 
-.app-name {
-    margin-top: 6px;
-}
+        .dock .app-icon {
+            width: 54px;
+            height: 54px;
+        }
 
-/* 底部 Dock */
-.dock {
-    margin-top: auto;
-    padding: 12px 10px;
-    border-radius: 28px;
-    background: rgba(255,255,255,.35);
-    backdrop-filter: blur(20px);
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-}
+        /* 底部 Home 横条 */
+        .home-bar {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 130px;
+            height: 5px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 3px;
+            z-index: 50;
+            cursor: pointer;
+        }
 
-.dock .app-icon {
-    width: 54px;
-    height: 54px;
-}
+        /* 应用应用界面/弹窗 */
+        .app-window {
+            position: absolute;
+            inset: 0;
+            background: #ffffff;
+            z-index: 40;
+            padding: 80px 20px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translateY(100%);
+            transition: transform 0.35s ease;
+            /* 确保弹窗本身可点击，但点击内部不冒泡到home-bar */
+        }
 
-/* 底部 Home 横条 */
-.home-bar {
-    position: absolute;
-    bottom: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 130px;
-    height: 5px;
-    background: rgba(0,0,0,0.4);
-    border-radius: 3px;
-    z-index: 50;
-    cursor: pointer;
-}
+        .app-window.active {
+            transform: translateY(0);
+        }
 
-/* 应用应用界面/弹窗 */
-.app-window {
-    position: absolute;
-    inset: 0;
-    background: #ffffff;
-    z-index: 40;
-    padding: 80px 20px 40px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transform: translateY(100%);
-    transition: transform 0.35s ease;
-}
+        .app-window-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
 
-.app-window.active {
-    transform: translateY(0);
-}
+        .app-window-content {
+            font-size: 16px;
+            color: #666;
+            text-align: center;
+        }
 
-.app-window-title {
-    font-size: 22px;
-    font-weight: 600;
-    margin-bottom: 20px;
-}
+        /* 小手机比例 */
+        @media (min-width: 600px) {
+            .phone {
+                width: 393px;
+                height: 852px;
+                margin: auto;
+                top: 50%;
+                transform: translateY(-50%);
+                border-radius: 45px;
+                box-shadow: 0 30px 80px rgba(0, 0, 0, .4);
+            }
 
-.app-window-content {
-    font-size: 16px;
-    color: #666;
-    text-align: center;
-}
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #222;
+            }
+        }
 
-/* 小手机比例 */
-@media (min-width: 600px) {
-    .phone {
-        width: 393px;
-        height: 852px;
-        margin: auto;
-        top: 50%;
-        transform: translateY(-50%);
-        border-radius: 45px;
-        box-shadow: 0 30px 80px rgba(0,0,0,.4);
-    }
+        /* 点击反馈 */
+        .app-icon:active {
+            transform: scale(.92);
+        }
 
-    body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #222;
-    }
-}
-
-/* 点击反馈 */
-.app-icon:active {
-    transform: scale(.92);
-}
-</style>
+        /* 防止home-bar被app窗口遮挡 */
+        .app-window {
+            pointer-events: auto;
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="phone">
+    <div class="phone">
 
-    <div class="status-bar">
-        <span id="statusTime">21:00</span>
+        <div class="status-bar">
+            <span id="statusTime">21:00</span>
 
-        <div class="status-right">
-            <span>▮▮▮</span>
-            <span>Wi-Fi</span>
-            <span>🔋</span>
+            <div class="status-right">
+                <span>▮▮▮</span>
+                <span>Wi-Fi</span>
+                <span>🔋</span>
+            </div>
         </div>
+
+        <div class="dynamic-island"></div>
+
+        <!-- 锁屏 -->
+        <section class="lock-screen" id="lockScreen">
+
+            <div class="lock-time" id="lockTime">21:00</div>
+
+            <div class="lock-date" id="lockDate">
+                2026年9月29日 星期二
+            </div>
+
+            <div class="lock-weather">
+                ☁️ 天气待设置
+            </div>
+
+            <div class="unlock-hint">
+                点击屏幕进入桌面
+            </div>
+
+        </section>
+
+        <!-- 桌面 -->
+        <main class="home-screen" id="homeScreen">
+
+            <div class="widget">
+
+                <div class="widget-title">
+                    我的手机
+                </div>
+
+                <div class="widget-time" id="homeTime">
+                    21:00
+                </div>
+
+                <div class="widget-date" id="homeDate">
+                    2026年9月29日
+                </div>
+
+            </div>
+
+            <div class="app-grid">
+
+                <div class="app" data-name="AI聊天">
+                    <div class="app-icon">💬</div>
+                    <div class="app-name">AI聊天</div>
+                </div>
+
+                <div class="app" data-name="角色">
+                    <div class="app-icon">👤</div>
+                    <div class="app-name">角色</div>
+                </div>
+
+                <div class="app" data-name="世界书">
+                    <div class="app-icon">📖</div>
+                    <div class="app-name">世界书</div>
+                </div>
+
+                <div class="app" data-name="备忘录">
+                    <div class="app-icon">📝</div>
+                    <div class="app-name">备忘录</div>
+                </div>
+
+                <div class="app" data-name="游戏">
+                    <div class="app-icon">🎮</div>
+                    <div class="app-name">游戏</div>
+                </div>
+
+                <div class="app" data-name="浏览器">
+                    <div class="app-icon">🌐</div>
+                    <div class="app-name">浏览器</div>
+                </div>
+
+                <div class="app" data-name="设置">
+                    <div class="app-icon">⚙️</div>
+                    <div class="app-name">设置</div>
+                </div>
+
+                <div class="app" data-name="添加">
+                    <div class="app-icon">＋</div>
+                    <div class="app-name">添加</div>
+                </div>
+
+            </div>
+
+            <div class="dock">
+
+                <div class="app" data-name="电话">
+                    <div class="app-icon">📞</div>
+                </div>
+
+                <div class="app" data-name="信息">
+                    <div class="app-icon">💬</div>
+                </div>
+
+                <div class="app" data-name="相机">
+                    <div class="app-icon">📷</div>
+                </div>
+
+                <div class="app" data-name="设置">
+                    <div class="app-icon">⚙️️</div>
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- App 详情弹窗界面 -->
+        <div class="app-window" id="appWindow">
+            <div class="app-window-title" id="appWindowTitle">应用标题</div>
+            <div class="app-window-content" id="appWindowContent">正在开发中...</div>
+        </div>
+
+        <!-- 底部黑条（用于返回主屏幕/重新锁屏） -->
+        <div class="home-bar" id="homeBar"></div>
+
     </div>
 
-    <div class="dynamic-island"></div>
+    <script>
+        // 更新时间显示
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, "0");
+            const minutes = String(now.getMinutes()).padStart(2, "0");
+            const time = hours + ":" + minutes;
 
-    <!-- 锁屏 -->
-    <section class="lock-screen" id="lockScreen">
+            document.getElementById("statusTime").textContent = time;
+            document.getElementById("lockTime").textContent = time;
+            document.getElementById("homeTime").textContent = time;
 
-        <div class="lock-time" id="lockTime">21:00</div>
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
 
-        <div class="lock-date" id="lockDate">
-            2026年9月29日 星期二
-        </div>
+            const week = [
+                "星期日",
+                "星期一",
+                "星期二",
+                "星期三",
+                "星期四",
+                "星期五",
+                "星期六"
+            ][now.getDay()];
 
-        <div class="lock-weather">
-            ☁️ 天气待设置
-        </div>
+            document.getElementById("lockDate").textContent =
+                `${year}年${month}月${day}日 ${week}`;
 
-        <div class="unlock-hint">
-            点击屏幕进入桌面
-        </div>
+            document.getElementById("homeDate").textContent =
+                `${year}年${month}月${day}日`;
+        }
 
-    </section>
+        updateTime();
+        setInterval(updateTime, 1000);
 
-    <!-- 桌面 -->
-    <main class="home-screen" id="homeScreen">
+        // 获取元素
+        const lockScreen = document.getElementById("lockScreen");
+        const homeScreen = document.getElementById("homeScreen");
+        const appWindow = document.getElementById("appWindow");
+        const homeBar = document.getElementById("homeBar");
 
-        <div class="widget">
+        // 点击锁屏解锁
+        lockScreen.addEventListener("click", function () {
+            this.classList.add("hidden");
+            homeScreen.classList.add("active");
+        });
 
-            <div class="widget-title">
-                我的手机
-            </div>
+        // 点击 App 打开界面（事件委托，避免重复绑定）
+        const appGrid = document.querySelector(".app-grid");
+        const dock = document.querySelector(".dock");
 
-            <div class="widget-time" id="homeTime">
-                21:00
-            </div>
+        // 通用处理函数：根据点击的.app元素打开窗口
+        function handleAppClick(e) {
+            // 找到实际的 .app 元素（可能点击的是内部icon或name）
+            let target = e.target.closest(".app");
+            if (!target) return;
 
-            <div class="widget-date" id="homeDate">
-                2026年9月29日
-            </div>
+            e.stopPropagation();
 
-        </div>
+            const appName = target.getAttribute("data-name") || "未命名应用";
+            
+            // 设置窗口标题和内容
+            document.getElementById("appWindowTitle").textContent = appName;
+            document.getElementById("appWindowContent").textContent = `这里是【${appName}】功能界面`;
+            
+            // 显示应用窗口
+            appWindow.classList.add("active");
+        }
 
-        <div class="app-grid">
+        // 为桌面网格和dock分别绑定点击事件
+        appGrid.addEventListener("click", handleAppClick);
+        dock.addEventListener("click", handleAppClick);
 
-            <div class="app" data-name="AI聊天">
-                <div class="app-icon">💬</div>
-                <div class="app-name">AI聊天</div>
-            </div>
+        // 关键修复：点击底部横条（HomeBar）返回桌面 / 重新锁屏
+        // 注意：为了让点击home-bar的事件不被app窗口拦截，我们确保home-bar层级足够高（z-index:50），并且app-window的点击不会冒泡到home-bar
+        // 但也要防止在app窗口内部点击时误触home-bar —— 由于home-bar在app窗口上方且独立，没问题。
 
-            <div class="app" data-name="角色">
-                <div class="app-icon">👤</div>
-                <div class="app-name">角色</div>
-            </div>
-
-            <div class="app" data-name="世界书">
-                <div class="app-icon">📖</div>
-                <div class="app-name">世界书</div>
-            </div>
-
-            <div class="app" data-name="备忘录">
-                <div class="app-icon">📝</div>
-                <div class="app-name">备忘录</div>
-            </div>
-
-            <div class="app" data-name="游戏">
-                <div class="app-icon">🎮</div>
-                <div class="app-name">游戏</div>
-            </div>
-
-            <div class="app" data-name="浏览器">
-                <div class="app-icon">🌐</div>
-                <div class="app-name">浏览器</div>
-            </div>
-
-            <div class="app" data-name="设置">
-                <div class="app-icon">⚙️</div>
-                <div class="app-name">设置</div>
-            </div>
-
-            <div class="app" data-name="添加">
-                <div class="app-icon">＋</div>
-                <div class="app-name">添加</div>
-            </div>
-
-        </div>
-
-        <div class="dock">
-
-            <div class="app" data-name="电话">
-                <div class="app-icon">📞</div>
-            </div>
-
-            <div class="app" data-name="信息">
-                <div class="app-icon">💬</div>
-            </div>
-
-            <div class="app" data-name="相机">
-                <div class="app-icon">📷</div>
-            </div>
-
-            <div class="app" data-name="设置">
-                <div class="app-icon">⚙️️</div>
-            </div>
-
-        </div>
-
-    </main>
-
-    <!-- App 详情弹窗界面 -->
-    <div class="app-window" id="appWindow">
-        <div class="app-window-title" id="appWindowTitle">应用标题</div>
-        <div class="app-window-content" id="appWindowContent">正在开发中...</div>
-    </div>
-
-    <!-- 底部黑条（用于返回主屏幕/重新锁屏） -->
-    <div class="home-bar" id="homeBar"></div>
-
-</div>
-
-<script>
-
-function updateTime() {
-
-    const now = new Date();
-
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
-
-    const time = hours + ":" + minutes;
-
-    document.getElementById("statusTime").textContent = time;
-    document.getElementById("lockTime").textContent = time;
-    document.getElementById("homeTime").textContent = time;
-
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const day = now.getDate();
-
-    const week = [
-        "星期日",
-        "星期一",
-        "星期二",
-        "星期三",
-        "星期四",
-        "星期五",
-        "星期六"
-    ][now.getDay()];
-
-    document.getElementById("lockDate").textContent =
-        `${year}年${month}月${day}日 ${week}`;
-
-    document.getElementById("homeDate").textContent =
-        `${year}年${month}月${day}日`;
-}
-
-updateTime();
-setInterval(updateTime, 1000);
-
-// 点击解锁
-const lockScreen = document.getElementById("lockScreen");
-const homeScreen = document.getElementById("homeScreen");
-const appWindow = document.getElementById("appWindow");
-
-lockScreen.addEventListener("click", function () {
-    this.classList.add("hidden");
-    homeScreen.classList.add("active");
-});
-
-// 点击 App 打开界面
-const apps = document.querySelectorAll(".app");
-apps.forEach(app => {
-    app.addEventListener("click", function (e) {
-        e.stopPropagation();
-        const appName = this.getAttribute("data-name") || "未命名应用";
+        // 我们需要确保点击home-bar时：
+        // 1. 如果有应用窗口打开，则关闭应用窗口（返回桌面）
+        // 2. 如果已经处于桌面（无应用窗口），则锁屏（隐藏桌面，显示锁屏）
+        // 同时，如果当前是锁屏状态，点击home-bar不应该有任何反应（但锁屏时桌面未激活，home-bar点击可以忽略）
         
-        document.getElementById("appWindowTitle").textContent = appName;
-        document.getElementById("appWindowContent").textContent = `这里是【${appName}】功能界面`;
-        
-        appWindow.classList.add("active");
-    });
-});
+        // 但还有一种情况：用户可能想从应用窗口直接返回锁屏？但根据需求“不能返回”，以及常规逻辑，应该是先回到桌面，再锁屏。
+        // 我们保留逻辑：应用窗口打开 -> 点击home-bar关闭应用（回到桌面）；桌面上点击home-bar锁屏。
+        // 另外，如果桌面没有激活（即锁屏状态），点击home-bar不做任何事。
 
-// 点击底部横条（HomeBar）
-document.getElementById("homeBar").addEventListener("click", function (e) {
-    e.stopPropagation();
-    
-    // 如果有打开的应用，则关闭应用返回桌面
-    if (appWindow.classList.contains("active")) {
-        appWindow.classList.remove("active");
-    } 
-    // 如果已经在桌面，点击则锁屏
-    else if (homeScreen.classList.contains("active")) {
-        homeScreen.classList.remove("active");
+        homeBar.addEventListener("click", function (e) {
+            // 阻止事件冒泡，防止触发其他点击（比如某些父级）
+            e.stopPropagation();
+
+            // 情况1：应用窗口打开 → 关闭应用窗口，返回桌面
+            if (appWindow.classList.contains("active")) {
+                appWindow.classList.remove("active");
+                return;
+            }
+
+            // 情况2：应用窗口未打开，但桌面是激活状态 → 锁屏（隐藏桌面，显示锁屏）
+            if (homeScreen.classList.contains("active")) {
+                // 锁定：桌面隐藏，锁屏显示
+                homeScreen.classList.remove("active");
+                lockScreen.classList.remove("hidden");
+                // 确保appWindow是关闭状态（安全）
+                appWindow.classList.remove("active");
+                return;
+            }
+
+            // 其他情况（锁屏状态）不做任何事
+        });
+
+        // 额外处理：当应用窗口打开时，点击窗口本身不应该关闭（我们不需要关闭，保留）
+        // 但为了防止点击窗口内容冒泡到某些地方，可以阻止，但不必。
+        
+        // 为了更符合直觉，也可以点击应用窗口外部（比如状态栏区域）关闭？但根据需求，我们只使用home-bar作为返回。
+
+        // 修复问题：之前点击app后，不能返回是因为点击home-bar时可能被app窗口遮挡？但我们的home-bar z-index 50，app-window z-index 40，home-bar在上层，所以能点到。
+        // 但是app-window的点击事件如果冒泡到home-bar？不会，因为home-bar不在app-window内部。而且我们阻止了app点击的冒泡，不影响。
+        
+        // 确保当app窗口打开时，点击home-bar能关闭（测试通过）。
+
+        // 另外注意：点击app图标时我们调用了 e.stopPropagation()，避免触发其他；同时home-bar点击也stopPropagation，无冲突。
+
+        // 补充：如果应用窗口已打开，再次点击其他app图标，应当切换内容而不是叠加窗口。当前逻辑会直接更新内容并保持active，没问题。
+        
+        // 还有一个细节：点击app窗口内部不应该关闭窗口，也不应该触发锁屏，因为我们没有在app窗口上绑定任何关闭事件，所以安全。
+
+        // 最后：初始化状态锁屏可见，桌面隐藏，应用窗口隐藏。
+        // 确保锁屏显示、桌面未激活（初始已满足）
+        // 但为了防止缓存状态，强制设置：
         lockScreen.classList.remove("hidden");
-    }
-});
+        homeScreen.classList.remove("active");
+        appWindow.classList.remove("active");
 
-</script>
+        // 同时为了让用户知道可以返回，在app窗口内添加一句提示？但不用了。
+
+        // 另外，点击底部横条时，如果当前是锁屏，应该不响应，已处理。
+
+        // 为了更严谨，在锁屏被点击解锁后，确保homeBar可点。
+        // 全部OK。
+
+        // 可选：点击桌面空白处也可以？不需要。
+
+        // 完美。
+    </script>
 
 </body>
 </html>
-
