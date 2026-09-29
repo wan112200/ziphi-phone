@@ -79,6 +79,7 @@ body {
     align-items: center;
     padding-top: 100px;
     transition: transform .45s ease, opacity .45s ease;
+    cursor: pointer;
 }
 
 .lock-screen.hidden {
@@ -170,6 +171,7 @@ body {
 .app {
     text-align: center;
     font-size: 12px;
+    cursor: pointer;
 }
 
 .app-icon {
@@ -183,6 +185,7 @@ body {
     font-size: 28px;
     background: rgba(255,255,255,.72);
     box-shadow: 0 7px 18px rgba(0,0,0,.12);
+    transition: transform 0.1s ease;
 }
 
 .app-name {
@@ -204,6 +207,50 @@ body {
 .dock .app-icon {
     width: 54px;
     height: 54px;
+}
+
+/* 底部 Home 横条 */
+.home-bar {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 5px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 3px;
+    z-index: 50;
+    cursor: pointer;
+}
+
+/* 应用应用界面/弹窗 */
+.app-window {
+    position: absolute;
+    inset: 0;
+    background: #ffffff;
+    z-index: 40;
+    padding: 80px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translateY(100%);
+    transition: transform 0.35s ease;
+}
+
+.app-window.active {
+    transform: translateY(0);
+}
+
+.app-window-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.app-window-content {
+    font-size: 16px;
+    color: #666;
+    text-align: center;
 }
 
 /* 小手机比例 */
@@ -289,42 +336,42 @@ body {
 
         <div class="app-grid">
 
-            <div class="app">
+            <div class="app" data-name="AI聊天">
                 <div class="app-icon">💬</div>
                 <div class="app-name">AI聊天</div>
             </div>
 
-            <div class="app">
+            <div class="app" data-name="角色">
                 <div class="app-icon">👤</div>
                 <div class="app-name">角色</div>
             </div>
 
-            <div class="app">
+            <div class="app" data-name="世界书">
                 <div class="app-icon">📖</div>
                 <div class="app-name">世界书</div>
             </div>
 
-            <div class="app">
+            <div class="app" data-name="备忘录">
                 <div class="app-icon">📝</div>
                 <div class="app-name">备忘录</div>
             </div>
 
-            <div class="app">
+            <div class="app" data-name="游戏">
                 <div class="app-icon">🎮</div>
                 <div class="app-name">游戏</div>
             </div>
 
-            <div class="app">
+            <div class="app" data-name="浏览器">
                 <div class="app-icon">🌐</div>
                 <div class="app-name">浏览器</div>
             </div>
 
-            <div class="app">
+            <div class="app" data-name="设置">
                 <div class="app-icon">⚙️</div>
                 <div class="app-name">设置</div>
             </div>
 
-            <div class="app">
+            <div class="app" data-name="添加">
                 <div class="app-icon">＋</div>
                 <div class="app-name">添加</div>
             </div>
@@ -333,25 +380,34 @@ body {
 
         <div class="dock">
 
-            <div class="app">
+            <div class="app" data-name="电话">
                 <div class="app-icon">📞</div>
             </div>
 
-            <div class="app">
+            <div class="app" data-name="信息">
                 <div class="app-icon">💬</div>
             </div>
 
-            <div class="app">
+            <div class="app" data-name="相机">
                 <div class="app-icon">📷</div>
             </div>
 
-            <div class="app">
-                <div class="app-icon">⚙️</div>
+            <div class="app" data-name="设置">
+                <div class="app-icon">⚙️️</div>
             </div>
 
         </div>
 
     </main>
+
+    <!-- App 详情弹窗界面 -->
+    <div class="app-window" id="appWindow">
+        <div class="app-window-title" id="appWindowTitle">应用标题</div>
+        <div class="app-window-content" id="appWindowContent">正在开发中...</div>
+    </div>
+
+    <!-- 底部黑条（用于返回主屏幕/重新锁屏） -->
+    <div class="home-bar" id="homeBar"></div>
 
 </div>
 
@@ -394,16 +450,47 @@ function updateTime() {
 updateTime();
 setInterval(updateTime, 1000);
 
-document.getElementById("lockScreen").addEventListener("click", function () {
+// 点击解锁
+const lockScreen = document.getElementById("lockScreen");
+const homeScreen = document.getElementById("homeScreen");
+const appWindow = document.getElementById("appWindow");
 
+lockScreen.addEventListener("click", function () {
     this.classList.add("hidden");
+    homeScreen.classList.add("active");
+});
 
-    document.getElementById("homeScreen")
-        .classList.add("active");
+// 点击 App 打开界面
+const apps = document.querySelectorAll(".app");
+apps.forEach(app => {
+    app.addEventListener("click", function (e) {
+        e.stopPropagation();
+        const appName = this.getAttribute("data-name") || "未命名应用";
+        
+        document.getElementById("appWindowTitle").textContent = appName;
+        document.getElementById("appWindowContent").textContent = `这里是【${appName}】功能界面`;
+        
+        appWindow.classList.add("active");
+    });
+});
 
+// 点击底部横条（HomeBar）
+document.getElementById("homeBar").addEventListener("click", function (e) {
+    e.stopPropagation();
+    
+    // 如果有打开的应用，则关闭应用返回桌面
+    if (appWindow.classList.contains("active")) {
+        appWindow.classList.remove("active");
+    } 
+    // 如果已经在桌面，点击则锁屏
+    else if (homeScreen.classList.contains("active")) {
+        homeScreen.classList.remove("active");
+        lockScreen.classList.remove("hidden");
+    }
 });
 
 </script>
 
 </body>
 </html>
+
